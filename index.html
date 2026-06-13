@@ -1,0 +1,186 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Aritas Store Management</title>
+  <link rel="stylesheet" href="styles.css">
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.2/dist/jspdf.umd.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+</head>
+<body>
+  <header class="topbar">
+    <img class="logo" src="aritas_logo.png" alt="Aritas logo">
+    <div class="company-block">
+      <h1>Aritas Store Management</h1>
+      <p id="companyLine">Aritas</p>
+      <p id="modeText">Local demo mode</p>
+    </div>
+    <button id="refreshBtn" title="Refresh">Refresh</button>
+  </header>
+
+  <nav class="tabs" aria-label="Main sections">
+    <button class="active" data-page="dashboard">Home</button>
+    <button data-page="reports">Daily Reports</button>
+    <button data-page="products">Products</button>
+    <button data-page="suppliers">Suppliers</button>
+    <button data-page="departments">Departments</button>
+    <button data-page="units">Units</button>
+    <button data-page="settings">Cloud Setup</button>
+  </nav>
+
+  <main>
+    <section id="dashboard" class="page active">
+      <div class="stats">
+        <button data-jump="reports"><span id="reportCount">0</span>Daily Reports</button>
+        <button data-jump="products"><span id="productCount">0</span>Products</button>
+        <button data-jump="suppliers"><span id="supplierCount">0</span>Suppliers</button>
+        <button data-jump="departments"><span id="departmentCount">0</span>Departments</button>
+        <button data-jump="units"><span id="unitCount">0</span>Units</button>
+      </div>
+      <h2>Recent Reports</h2>
+      <div id="recentReports" class="list"></div>
+    </section>
+
+    <section id="reports" class="page">
+      <h2>Daily Inward Outward</h2>
+      <form id="reportForm" class="form-grid">
+        <input name="id" type="hidden">
+        <label>Code<input name="code" required></label>
+        <label>Product<input name="product" required></label>
+        <label>Supplier<select name="supplier"></select></label>
+        <label>Report Date<input name="report_date" type="date" required></label>
+        <label>Opening Stock<input name="opening_stock" type="number" step="0.01" value="0"></label>
+        <label>Inward Qty<input name="inward_qty" type="number" step="0.01" value="0"></label>
+        <label>Outward Qty<input name="outward_qty" type="number" step="0.01" value="0"></label>
+        <label>Unit<select name="unit"></select></label>
+        <label>Price<input name="price" type="number" step="0.01" value="0"></label>
+        <label>Department<select name="department"></select></label>
+        <output id="closingText">Closing: 0.00</output>
+        <output id="totalText">Total: 0.00</output>
+        <button type="submit" id="reportSaveBtn">Save Report</button>
+        <button type="button" id="reportUpdateBtn" disabled>Update</button>
+        <button type="button" id="reportDeleteBtn" class="danger" disabled>Delete</button>
+        <button type="reset">Clear</button>
+      </form>
+      <div class="toolbar">
+        <input id="reportSearch" class="search" placeholder="Search reports">
+        <button class="search-run">Search</button>
+        <button data-export="daily_reports" data-format="pdf">PDF</button>
+        <button data-export="daily_reports" data-format="excel">Excel</button>
+        <button data-export="daily_reports" data-format="pdf" data-search="true">Search PDF</button>
+        <button data-export="daily_reports" data-format="excel" data-search="true">Search Excel</button>
+        <button id="reportSearchClear">Search Clear</button>
+      </div>
+      <div id="reportList" class="list"></div>
+    </section>
+
+    <section id="products" class="page master" data-type="products">
+      <h2>Products</h2>
+      <form class="master-form">
+        <input name="id" type="hidden">
+        <input name="code" placeholder="Code" required>
+        <input name="name" placeholder="Name" required>
+        <button type="submit">Save</button>
+        <button type="button" class="update" disabled>Update</button>
+        <button type="button" class="delete danger" disabled>Delete</button>
+        <button type="reset" class="clear">Clear</button>
+      </form>
+      <div class="toolbar">
+        <input class="search" placeholder="Search products">
+        <button class="search-run">Search</button>
+        <button data-export="products" data-format="pdf">PDF</button>
+        <button data-export="products" data-format="excel">Excel</button>
+        <button data-export="products" data-format="pdf" data-search="true">Search PDF</button>
+        <button data-export="products" data-format="excel" data-search="true">Search Excel</button>
+        <button class="search-clear">Search Clear</button>
+      </div>
+      <div class="list"></div>
+    </section>
+
+    <section id="suppliers" class="page master" data-type="suppliers">
+      <h2>Suppliers</h2>
+      <form class="master-form">
+        <input name="id" type="hidden">
+        <input name="name" placeholder="Name" required>
+        <input name="contact" placeholder="Contact">
+        <button type="submit">Save</button>
+        <button type="button" class="update" disabled>Update</button>
+        <button type="button" class="delete danger" disabled>Delete</button>
+        <button type="reset" class="clear">Clear</button>
+      </form>
+      <div class="toolbar">
+        <input class="search" placeholder="Search suppliers">
+        <button class="search-run">Search</button>
+        <button data-export="suppliers" data-format="pdf">PDF</button>
+        <button data-export="suppliers" data-format="excel">Excel</button>
+        <button data-export="suppliers" data-format="pdf" data-search="true">Search PDF</button>
+        <button data-export="suppliers" data-format="excel" data-search="true">Search Excel</button>
+        <button class="search-clear">Search Clear</button>
+      </div>
+      <div class="list"></div>
+    </section>
+
+    <section id="departments" class="page master" data-type="departments">
+      <h2>Departments</h2>
+      <form class="master-form">
+        <input name="id" type="hidden">
+        <input name="name" placeholder="Name" required>
+        <button type="submit">Save</button>
+        <button type="button" class="update" disabled>Update</button>
+        <button type="button" class="delete danger" disabled>Delete</button>
+        <button type="reset" class="clear">Clear</button>
+      </form>
+      <div class="toolbar">
+        <input class="search" placeholder="Search departments">
+        <button class="search-run">Search</button>
+        <button data-export="departments" data-format="pdf">PDF</button>
+        <button data-export="departments" data-format="excel">Excel</button>
+        <button data-export="departments" data-format="pdf" data-search="true">Search PDF</button>
+        <button data-export="departments" data-format="excel" data-search="true">Search Excel</button>
+        <button class="search-clear">Search Clear</button>
+      </div>
+      <div class="list"></div>
+    </section>
+
+    <section id="units" class="page master" data-type="units">
+      <h2>Units</h2>
+      <form class="master-form">
+        <input name="id" type="hidden">
+        <input name="name" placeholder="Name" required>
+        <button type="submit">Save</button>
+        <button type="button" class="update" disabled>Update</button>
+        <button type="button" class="delete danger" disabled>Delete</button>
+        <button type="reset" class="clear">Clear</button>
+      </form>
+      <div class="toolbar">
+        <input class="search" placeholder="Search units">
+        <button class="search-run">Search</button>
+        <button data-export="units" data-format="pdf">PDF</button>
+        <button data-export="units" data-format="excel">Excel</button>
+        <button data-export="units" data-format="pdf" data-search="true">Search PDF</button>
+        <button data-export="units" data-format="excel" data-search="true">Search Excel</button>
+        <button class="search-clear">Search Clear</button>
+      </div>
+      <div class="list"></div>
+    </section>
+
+    <section id="settings" class="page">
+      <h2>Cloud Setup</h2>
+      <form id="settingsForm" class="settings-form">
+        <label>Company Name<input name="companyName" placeholder="Aritas"></label>
+        <label>Full Company Address / Details<textarea name="companyDetails" rows="4" placeholder="Full address, phone, GST or other details"></textarea></label>
+        <label>Supabase Project URL<input name="url" placeholder="https://xxxx.supabase.co"></label>
+        <label>Supabase anon public key<textarea name="key" rows="4"></textarea></label>
+        <button type="submit">Save Cloud Settings</button>
+        <button type="button" id="clearCloud">Use Local Demo</button>
+      </form>
+      <p class="note">For shared data on two iPhones and one PC, use the same Supabase URL and key on every device.</p>
+    </section>
+  </main>
+
+  <script src="logo_data.js?v=20260613_1525"></script>
+  <script src="app.js?v=20260613_1525"></script>
+</body>
+</html>
